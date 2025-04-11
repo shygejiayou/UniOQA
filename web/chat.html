@@ -1,0 +1,637 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答界面</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f2f5;
+            overflow: hidden;
+            /* Prevent body scroll */
+        }
+
+        header {
+            background-color: white;
+            color: black;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #e0e0e0;
+            /* Light grey solid line */
+        }
+
+        .header-icon {
+            margin-right: 10px;
+            font-size: 24px;
+            width: 40px;
+            height: 40px
+        }
+
+        .header-title {
+            font-size: 20px;
+            margin-right: 20px;
+        }
+
+        .chat-tech {
+            background-color: rgb(249, 249, 249);
+            color: black;
+            cursor: pointer;
+            height: 40px;
+            padding: 5px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            margin: 0 5px;
+        }
+
+        .chat-tech.active {
+            background-color: rgb(22, 119, 255);
+            color: white;
+        }
+
+        .chat-tech.active .icon {
+            content: url('./img/tech-white.png');
+        }
+
+        .chat-tech .icon {
+            margin-right: 5px;
+            font-size: 18px;
+            width: 20px;
+            height: 20px;
+        }
+
+        main {
+            display: flex;
+            height: calc(100vh - 50px);
+            /* Adjust based on header height */
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar .new-chat {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .sidebar .new-chat .icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .sidebar .history {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .history-item:hover {
+            background-color: #f0f2f5;
+        }
+
+        .history-item:hover .options-button {
+            display: block;
+        }
+
+        .options-button {
+            display: none;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .options {
+            position: absolute;
+            right: 30px;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .options .option {
+            padding: 5px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .options .option:hover {
+            background-color: #f0f2f5;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            margin: 0 0 10px 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            /* Ensure chat area takes full height */
+            position: relative;
+            /* Add position relative */
+        }
+
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: calc(100vh - 160px);
+            /* Adjust height according to other elements */
+            height: calc(100vh - 160px);
+            /* Adjust height according to other elements */
+        }
+
+        .chat-area .input-area {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            position: absolute;
+            /* Add position absolute */
+            bottom: 0;
+            /* Fix to the bottom */
+            width: 100%;
+            /* Make it full width */
+            background-color: white;
+            /* Ensure background is white */
+            box-sizing: border-box;
+        }
+
+        .chat-area .input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .chat-area .input-area button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .chat-area .input-area button:hover {
+            background-color: #0056b3;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+            max-height: 800px;
+        }
+
+        .message .icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .message img {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+        }
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .message-content {
+            max-width: 400px;
+        }
+
+        .username {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .text {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+
+        .user-message {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .assistant-message {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .user-message .text {
+            background-color: #e0e0e0;
+        }
+
+        .assistant-message .text {
+            background-color: #e0f7fa;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <img src="./img/Q&A.jpeg" alt="Logo" class="header-icon">
+        <span class="header-title">问答系统</span>
+        <div style="flex-grow: 1;"></div> <!-- Add a flex-grow div to push the icons to the center -->
+        <div class="chat-tech" id="tech1" onclick="loadTechChats('tech1')">
+            <img src="./img/tech.png" alt="Tech 1 Icon" class="icon">
+            <span>LLM直接问答</span>
+        </div>
+        <div class="chat-tech" id="tech2" onclick="loadTechChats('tech2')">
+            <img src="./img/tech.png" alt="Tech 2 Icon" class="icon">
+            <span>微调LLM+CQL</span>
+        </div>
+        <div class="chat-tech" id="tech3" onclick="loadTechChats('tech3')">
+            <img src="./img/tech.png" alt="Tech 3 Icon" class="icon">
+            <span>RAG</span>
+        </div>
+        <div style="flex-grow: 1;"></div> <!-- Add another flex-grow div to keep the layout balanced -->
+    </header>
+    <main>
+        <div class="sidebar">
+            <div class="new-chat" onclick="newChat()">
+                <span>新建聊天</span>
+            </div>
+            <div class="history" id="history">
+                <!-- 聊天记录将在这里动态加载 -->
+            </div>
+        </div>
+        <div class="chat-area">
+            <div class="messages" id="messages">
+                <!-- 聊天内容将在这里动态加载 -->
+            </div>
+            <div class="input-area">
+                <input type="text" id="inputMessage" placeholder="输入你的问题...">
+                <button onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </main>
+    <script>
+        let chatCounter = 10; // 用于生成新的聊天ID
+        let newChats = {
+            tech1: [],
+            tech2: [],
+            tech3: []
+        }; // 存储新建的聊天记录
+
+        const chats = {
+            tech1: ["聊天1", "聊天2", "聊天3"],
+            tech2: ["聊天4", "聊天5"],
+            tech3: ["聊天6", "聊天7", "聊天8", "聊天9"]
+        };
+
+        let currentTech = 'tech1'; // 当前选中的技术
+        let currentChat = null; // 当前选中的聊天
+        let chatMessages = {}; // 存储每个聊天的消息内容
+
+        function loadTechChats(tech) {
+            currentTech = tech;
+            document.querySelectorAll('.chat-tech').forEach(el => {
+                el.classList.remove('active');
+                const icon = el.querySelector('.icon');
+                if (icon) {
+                    icon.src = './img/tech.png';
+                }
+            });
+            const techElement = document.getElementById(tech);
+            if (techElement) {
+                techElement.classList.add('active');
+                const icon = techElement.querySelector('.icon');
+                if (icon) {
+                    icon.src = './img/tech-white.png';
+                }
+            } else {
+                console.error(`Element with id ${tech} not found.`);
+            }
+            // Load chat history and other related logic
+            const historyDiv = document.getElementById('history');
+            if (historyDiv) {
+                historyDiv.innerHTML = '';
+                if (chats[tech]) {
+                    chats[tech].forEach(chat => {
+                        const chatItem = createChatItem(chat);
+                        historyDiv.appendChild(chatItem);
+                    });
+                }
+                if (newChats[tech]) {
+                    newChats[tech].forEach(chat => {
+                        const chatItem = createChatItem(chat);
+                        historyDiv.appendChild(chatItem);
+                    });
+                }
+            } else {
+                console.error("History div not found.");
+            }
+        }
+        let currentOptions = null;
+        function createChatItem(chat) {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'history-item';
+            chatItem.textContent = chat;
+            chatItem.onclick = (event) => {
+                event.stopPropagation();
+                loadChat(chat);
+            };
+
+            const optionsButton = document.createElement('i');
+            optionsButton.className = 'fas fa-ellipsis-v options-button';
+            optionsButton.onclick = (event) => {
+                event.stopPropagation();
+                toggleOptions(event, chat);
+            };
+
+            chatItem.appendChild(optionsButton);
+            return chatItem;
+        }
+
+        function toggleOptions(event, chat) {
+            let options = event.target.nextElementSibling;
+            if (!options || !options.classList.contains('options')) {
+                options = document.createElement('div');
+                options.className = 'options';
+                options.innerHTML = `
+                    <div class="option" onclick="startRenameChat('${chat}', this)">重命名</div>
+                    <div class="option" onclick="deleteChat('${chat}')">删除</div>
+                `;
+                event.target.parentElement.appendChild(options);
+            }
+
+            if (currentOptions && currentOptions !== options) {
+                currentOptions.style.display = 'none';
+            }
+
+            options.style.display = options.style.display === 'block' ? 'none' : 'block';
+
+            if (options.style.display === 'block') {
+                currentOptions = options;
+                document.addEventListener('click', hideOptions, { once: true });
+            }
+        }
+
+        function startRenameChat(chat, optionElement) {
+            const chatItem = optionElement.closest('.history-item');
+            chatItem.innerHTML = `<input type="text" class="rename-input" value="${chat}" />`;
+
+            const input = chatItem.querySelector('.rename-input');
+            input.focus();
+            input.addEventListener('blur', () => finishRenameChat(chatItem, chat));
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    finishRenameChat(chatItem, chat);
+                }
+            });
+        }
+
+        function finishRenameChat(chatItem, oldChatName) {
+            const input = chatItem.querySelector('.rename-input');
+            const newChatName = input.value.trim();
+
+            if (newChatName && newChatName !== oldChatName) {
+                const indexInChats = chats[currentTech].indexOf(oldChatName);
+                if (indexInChats > -1) {
+                    chats[currentTech][indexInChats] = newChatName;
+                }
+
+                const indexInNewChats = newChats[currentTech].indexOf(oldChatName);
+                if (indexInNewChats > -1) {
+                    newChats[currentTech][indexInNewChats] = newChatName;
+                }
+
+                if (currentChat === oldChatName) {
+                    currentChat = newChatName;
+                    loadChat(currentChat);
+                }
+            }
+
+            chatItem.innerHTML = newChatName || oldChatName;
+            const optionsButton = document.createElement('i');
+            optionsButton.className = 'fas fa-ellipsis-v options-button';
+            optionsButton.onclick = (event) => {
+                event.stopPropagation();
+                toggleOptions(event, newChatName || oldChatName);
+            };
+            chatItem.appendChild(optionsButton);
+        }
+
+
+        function hideOptions(event) {
+            if (currentOptions) {
+                currentOptions.style.display = 'none';
+                currentOptions = null;
+            }
+        }
+
+
+
+        function newChat() {
+            const newChatId = `新聊天${chatCounter++}`;
+            newChats[currentTech].push(newChatId); // 将新建的聊天记录添加到当前技术对应的数组中
+            const historyDiv = document.getElementById('history');
+            const newChatItem = createChatItem(newChatId);
+            historyDiv.appendChild(newChatItem);
+
+            // 清空聊天区域
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            chatMessages[newChatId] = []; // 初始化新聊天的消息内容
+            currentChat = newChatId; // 设置新聊天为当前聊天
+        }
+
+        function loadChat(chat) {
+            currentChat = chat;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            if (chatMessages[chat]) {
+                chatMessages[chat].forEach(message => {
+                    messagesDiv.innerHTML += message;
+                });
+            } else {
+                messagesDiv.innerHTML = `
+                      <div class="chat-message user-message">
+                          <img src="./img/assistant.svg" alt="User Avatar" class="avatar">
+                          <div class="message-content">
+                              <div class="username">ranwithyou</div>
+                              <div class="text"> ${chat} 的问题</div>
+                          </div>
+                      </div>
+                      <div class="chat-message assistant-message">
+                          <div class="message-content">
+                              <div class="text">${chat} 的回答</div>
+                          </div>
+                          <img src="./img/answer.jpeg" alt="Assistant Avatar" class="avatar">
+                      </div>
+                  `;
+            }
+            document.getElementById('inputMessage').value = ''; // 清空输入框
+        }
+
+
+        function sendMessage() {
+            const input = document.getElementById('inputMessage');
+            const message = input.value.trim();
+            if (message) {
+                if (!currentChat) {
+                    newChat();
+                }
+
+                // Display the user's message
+                const messagesDiv = document.getElementById('messages');
+                const userMessageHtml = `
+            <div class="chat-message user-message">
+                <img src="./img/assistant.svg" alt="User Avatar" class="avatar">
+                <div class="message-content">
+                    <div class="username">ranwithyou</div>
+                    <div class="text">${message}</div>
+                </div>
+            </div>
+        `;
+                messagesDiv.innerHTML += userMessageHtml;
+                if (!chatMessages[currentChat]) {
+                    chatMessages[currentChat] = [];
+                }
+                chatMessages[currentChat].push(userMessageHtml);
+                let url = '';
+                switch (currentTech) {
+                    case 'tech1':
+                        url = 'http://192.168.0.5:8000/llm/api/llmAnswer';
+                        break;
+                    case 'tech2':
+                        url = 'http://192.168.0.5:8000/llm/api/finetuneAnswer';
+                        break;
+                    case 'tech3':
+                        url = 'http://192.168.0.5:8000/llm/api/ragAnswer';
+                        break;
+                    default:
+                        console.error('Unknown tech:', currentTech);
+                        return;
+                }
+                // Send the message to the backend using Axios
+                axios.post(url, { question: message })
+                    .then(response => {
+                        console.log(response.data)
+                        const botMessage = response.data.data; // Assuming the response contains a 'reply' field
+
+                        // Display the bot's message
+                        const botMessageHtml = `
+                    <div class="chat-message assistant-message">
+                        <div class="message-content">
+                            <div class="text">${botMessage}</div>
+                        </div>
+                        <img src="./img/answer.jpeg" alt="Assistant Avatar" class="avatar">
+                    </div>
+                `;
+                        messagesDiv.innerHTML += botMessageHtml;
+                        chatMessages[currentChat].push(botMessageHtml);
+                        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+                    })
+                    .catch(error => {
+                        console.error('Error sending message:', error);
+                        // Optionally, you can display an error message to the user here
+                    });
+
+                input.value = ''; // Clear the input field
+            }
+        }
+
+
+        function deleteChat(chat) {
+            const indexInChats = chats[currentTech].indexOf(chat);
+            if (indexInChats > -1) {
+                chats[currentTech].splice(indexInChats, 1);
+            }
+
+            const indexInNewChats = newChats[currentTech].indexOf(chat);
+            if (indexInNewChats > -1) {
+                newChats[currentTech].splice(indexInNewChats, 1);
+            }
+
+            loadTechChats(currentTech); // 重新加载聊天记录
+
+            // 如果删除的是当前选中的聊天，清空右侧的聊天记录
+            if (currentChat === chat) {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = '';
+                currentChat = null;
+            }
+
+            delete chatMessages[chat]; // 删除保存的消息内容
+        }
+
+        function renameChat(chat) {
+            const newName = prompt(`重命名 "${chat}" 为:`);
+            if (newName) {
+                const indexInChats = chats[currentTech].indexOf(chat);
+                if (indexInChats > -1) {
+                    chats[currentTech][indexInChats] = newName;
+                }
+
+                const indexInNewChats = newChats[currentTech].indexOf(chat);
+                if (indexInNewChats > -1) {
+                    newChats[currentTech][indexInNewChats] = newName;
+                }
+
+                loadTechChats(currentTech); // 重新加载聊天记录
+
+                // 如果重命名的是当前选中的聊天，更新右侧的聊天标题
+                if (currentChat === chat) {
+                    currentChat = newName;
+                    loadChat(currentChat);
+                }
+            }
+        }
+
+        // 初始加载技术1的聊天记录
+        loadTechChats('tech1');
+    </script>
+</body>
+
+</html>
