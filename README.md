@@ -10,7 +10,6 @@ Make sure the data is correctly formatted.
 
 If you wish to reproduce our results, please refer to the official HuggingFace training pipeline and download the checkpoints we have released.
 
-## 📄 Citation
 
 If you find this project helpful, please consider citing our work:
 
